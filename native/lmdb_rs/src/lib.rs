@@ -127,7 +127,7 @@ fn env_close<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
     ok().encode(env)
 }
 
-#[rustler::nif(name = "env_set_maxreaders")]
+#[rustler::nif]
 fn env_set_maxreaders<'a>(
     env: Env<'a>,
     env_res: ResourceArc<EnvResource>,
@@ -137,25 +137,25 @@ fn env_set_maxreaders<'a>(
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "env_set_maxdbs")]
+#[rustler::nif]
 fn env_set_maxdbs<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, dbs: u32) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_env_set_maxdbs(env_res.env.get(), dbs as c_uint) };
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "env_set_mapsize")]
+#[rustler::nif]
 fn env_set_mapsize<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, size: u64) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_env_set_mapsize(env_res.env.get(), size as size_t) };
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "env_sync")]
+#[rustler::nif]
 fn env_sync<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, force: i32) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_env_sync(env_res.env.get(), force) };
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "env_stat")]
+#[rustler::nif]
 fn env_stat<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
     unsafe {
         let mut stat = std::mem::MaybeUninit::<lmdb::MDB_stat>::uninit();
@@ -176,7 +176,7 @@ fn env_stat<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
     }
 }
 
-#[rustler::nif(name = "env_info")]
+#[rustler::nif]
 fn env_info<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
     unsafe {
         let mut info = std::mem::MaybeUninit::<lmdb::MDB_envinfo>::uninit();
@@ -197,7 +197,7 @@ fn env_info<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
     }
 }
 
-#[rustler::nif(name = "txn_begin")]
+#[rustler::nif]
 fn txn_begin<'a>(
     env: Env<'a>,
     env_res: ResourceArc<EnvResource>,
@@ -228,7 +228,7 @@ fn txn_begin<'a>(
     make_ok_tuple(env, res)
 }
 
-#[rustler::nif(name = "txn_commit")]
+#[rustler::nif]
 fn txn_commit<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_txn_commit(txn_res.txn.get()) };
     // After commit, txn handle is invalid; set pointer to null
@@ -237,7 +237,7 @@ fn txn_commit<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "txn_abort")]
+#[rustler::nif]
 fn txn_abort<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
     unsafe {
         if !txn_res.txn.get().is_null() {
@@ -249,7 +249,7 @@ fn txn_abort<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
     ok().encode(env)
 }
 
-#[rustler::nif(name = "dbi_open")]
+#[rustler::nif]
 fn dbi_open<'a>(
     env: Env<'a>,
     txn_res: ResourceArc<TxnResource>,
@@ -281,13 +281,13 @@ fn dbi_open<'a>(
     make_ok_tuple(env, dbi as u32)
 }
 
-#[rustler::nif(name = "dbi_close")]
+#[rustler::nif]
 fn dbi_close<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, dbi: u32) -> Term<'a> {
     unsafe { lmdb::mdb_dbi_close(env_res.env.get(), dbi as lmdb::MDB_dbi) };
     ok().encode(env)
 }
 
-#[rustler::nif(name = "dbi_stat")]
+#[rustler::nif]
 fn dbi_stat<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Term<'a> {
     unsafe {
         let mut stat = std::mem::MaybeUninit::<lmdb::MDB_stat>::uninit();
@@ -308,7 +308,7 @@ fn dbi_stat<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Te
     }
 }
 
-#[rustler::nif(name = "get")]
+#[rustler::nif]
 fn get<'a>(
     env: Env<'a>,
     txn_res: ResourceArc<TxnResource>,
@@ -337,7 +337,7 @@ fn get<'a>(
     make_ok_tuple(env, bin_term)
 }
 
-#[rustler::nif(name = "put")]
+#[rustler::nif]
 fn put<'a>(
     env: Env<'a>,
     txn_res: ResourceArc<TxnResource>,
@@ -414,7 +414,7 @@ fn del_4<'a>(
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "cursor_open")]
+#[rustler::nif]
 fn cursor_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Term<'a> {
     let mut cursor_ptr: *mut lmdb::MDB_cursor = ptr::null_mut();
     let rc =
@@ -428,7 +428,7 @@ fn cursor_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) ->
     make_ok_tuple(env, res)
 }
 
-#[rustler::nif(name = "cursor_close")]
+#[rustler::nif]
 fn cursor_close<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>) -> Term<'a> {
     unsafe {
         lmdb::mdb_cursor_close(cur_res.cursor.get());
@@ -438,7 +438,7 @@ fn cursor_close<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>) -> Term<
     ok().encode(env)
 }
 
-#[rustler::nif(name = "cursor_get")]
+#[rustler::nif]
 fn cursor_get<'a>(
     env: Env<'a>,
     cur_res: ResourceArc<CursorResource>,
@@ -482,7 +482,7 @@ fn cursor_get<'a>(
     (ok(), key_term, data_term).encode(env)
 }
 
-#[rustler::nif(name = "cursor_put")]
+#[rustler::nif]
 fn cursor_put<'a>(
     env: Env<'a>,
     cur_res: ResourceArc<CursorResource>,
@@ -503,7 +503,7 @@ fn cursor_put<'a>(
     rc_to_term(env, rc)
 }
 
-#[rustler::nif(name = "cursor_del")]
+#[rustler::nif]
 fn cursor_del<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, flags: u32) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_cursor_del(cur_res.cursor.get(), flags as c_uint) };
     rc_to_term(env, rc)
