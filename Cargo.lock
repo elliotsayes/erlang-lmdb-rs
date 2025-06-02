@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lmdb_rs"
+name = "lmdb_nif"
 version = "0.1.0"
 dependencies = [
  "libc",

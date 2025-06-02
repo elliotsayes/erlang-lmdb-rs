@@ -1,5 +1,5 @@
-%% src/lmdb_rs.app.src
-{application, lmdb_rs,
+%% src/lmdb_nif.app.src
+{application, lmdb_nif,
  [
   {description, "Erlang NIF bindings for Lightning Memory-Mapped Database (LMDB)"},
   {vsn, "1.0.0"},
@@ -12,7 +12,7 @@
   {modules, []},
   {licenses, ["MIT"]},
   {links, [
-    {"GitHub", "https://github.com/yourorg/lmdb_rs"},
+    {"GitHub", "https://github.com/yourorg/lmdb_nif"},
     {"LMDB", "http://www.lmdb.tech/doc/"}
   ]},
   {maintainers, ["Your Name"]},

@@ -54,7 +54,7 @@
 %% @doc Create a new LMDB environment
 -spec env_create() -> {ok, lmdb_env()} | {error, term()}.
 env_create() ->
-    lmdb_rs:env_create().
+    lmdb_nif:env_create().
 
 -spec env_create(string() | binary()) -> {ok, lmdb_env()} | {error, term()}.
 env_create(Path) ->
@@ -91,35 +91,35 @@ env_open(Env, Path, Flags) when is_reference(Env) ->
         0 -> filelib:ensure_dir(Path ++ "/data.mdb");
         _ -> ok
     end,
-    lmdb_rs:env_open(Env, Path, Flags);
+    lmdb_nif:env_open(Env, Path, Flags);
 env_open(_, _, _) ->
    {error, {badarg, "Env should be reference."}}.
 
 %% @doc Close an LMDB environment
 -spec env_close(lmdb_env()) -> ok.
 env_close(Env) when is_reference(Env) ->
-    lmdb_rs:env_close(Env);
+    lmdb_nif:env_close(Env);
 env_close(_) -> 
    {error, {badarg, "Env must be a reference"}}.
 
 %% @doc Set maximum number of reader threads
 -spec env_set_maxreaders(lmdb_env(), pos_integer()) -> ok | {error, term()}.
 env_set_maxreaders(Env, Readers) when is_reference(Env), is_integer(Readers) ->
-    lmdb_rs:env_set_maxreaders(Env, Readers);
+    lmdb_nif:env_set_maxreaders(Env, Readers);
 env_set_maxreaders(_, _) ->
    {error, {badarg, "Readers must be a number and Env must be a reference."}}.
 
 %% @doc Set maximum number of databases
 -spec env_set_maxdbs(lmdb_env(), pos_integer()) -> ok | {error, term()}.
 env_set_maxdbs(Env, Dbs) when is_reference(Env), is_integer(Dbs) ->
-    lmdb_rs:env_set_maxdbs(Env, Dbs);
+    lmdb_nif:env_set_maxdbs(Env, Dbs);
 env_set_maxdbs(_, _) ->
     {error, {badarg, "Dbs must be a number and Env must be a reference"}}.
 
 %% @doc Set memory map size for the environment
 -spec env_set_mapsize(lmdb_env(), pos_integer()) -> ok | {error, term()}.
 env_set_mapsize(Env, Size) when is_reference(Env), is_integer(Size) ->
-    lmdb_rs:env_set_mapsize(Env, Size);
+    lmdb_nif:env_set_mapsize(Env, Size);
 env_set_mapsize(_, _) ->
     {error, {badarg, "Size must be a number and Env must be a reference"}}.
 
@@ -133,7 +133,7 @@ env_sync(_) ->
 %% @doc Sync environment to disk with force option
 -spec env_sync(lmdb_env(), boolean()) -> ok | {error, term()}.
 env_sync(Env, Force) when is_reference(Env), is_boolean(Force) ->
-    lmdb_rs:env_sync(Env, case Force of true -> 1; false -> 0 end);
+    lmdb_nif:env_sync(Env, case Force of true -> 1; false -> 0 end);
 env_sync(_, _) ->
     {error, {badarg, "Force must be boolean and Env must be a reference"}}.
 
@@ -153,7 +153,7 @@ open_db(Txn, Name, Flags) when is_reference(Txn), ?IS_ATOM_OR_STRING(Name), ?IS_
         _ when is_atom(Name) -> atom_to_list(Name);
         _ -> Name
     end,
-    lmdb_rs:dbi_open(Txn, DbName, Flags);
+    lmdb_nif:dbi_open(Txn, DbName, Flags);
 open_db(_, _, _) ->
     {error, {badargs, 
         "Txn must be reference, Name, must be atom or string, and Flags, must be non negative integer"
@@ -162,7 +162,7 @@ open_db(_, _, _) ->
 %% @doc Close a database
 -spec close_db(lmdb_env(), lmdb_dbi()) -> ok.
 close_db(Env, Dbi) ->
-    lmdb_rs:dbi_close(Env, Dbi).
+    lmdb_nif:dbi_close(Env, Dbi).
 
 %% @doc Get a value by key
 get(Env, Key) ->
@@ -187,7 +187,7 @@ get(Env, Key, FlagsInt) when is_integer(FlagsInt) ->
         Error -> Error
     end;
 get(Txn, Dbi, Key) when is_binary(Key) ->
-    lmdb_rs:get(Txn, Dbi, Key);
+    lmdb_nif:get(Txn, Dbi, Key);
 get(Txn, Dbi, Key) ->
     get(Txn, Dbi, term_to_binary(Key)).
 
@@ -221,7 +221,7 @@ put(Txn, Dbi, Key, Value) ->
 %% @doc Put a key-value pair with specified flags
 -spec put(lmdb_txn(), lmdb_dbi(), binary(), binary(), non_neg_integer()) -> ok | {error, term()}.
 put(Txn, Dbi, Key, Value, Flags) when is_binary(Key), is_binary(Value) ->
-    lmdb_rs:put(Txn, Dbi, Key, Value, Flags);
+    lmdb_nif:put(Txn, Dbi, Key, Value, Flags);
 put(Txn, Dbi, Key, Value, Flags) ->
     BinKey = case is_binary(Key) of true -> Key; false -> term_to_binary(Key) end,
     BinValue = case is_binary(Value) of true -> Value; false -> term_to_binary(Value) end,
@@ -230,14 +230,14 @@ put(Txn, Dbi, Key, Value, Flags) ->
 %% @doc Delete a key
 -spec delete(lmdb_txn(), lmdb_dbi(), binary()) -> ok | {error, term()}.
 delete(Txn, Dbi, Key) when is_binary(Key) ->
-    lmdb_rs:del(Txn, Dbi, Key);
+    lmdb_nif:del(Txn, Dbi, Key);
 delete(Txn, Dbi, Key) ->
     delete(Txn, Dbi, term_to_binary(Key)).
 
 %% @doc Delete a specific key-value pair
 -spec delete(lmdb_txn(), lmdb_dbi(), binary(), binary()) -> ok | {error, term()}.
 delete(Txn, Dbi, Key, Value) when is_binary(Key), is_binary(Value) ->
-    lmdb_rs:del(Txn, Dbi, Key, Value);
+    lmdb_nif:del(Txn, Dbi, Key, Value);
 delete(Txn, Dbi, Key, Value) ->
     BinKey = case is_binary(Key) of true -> Key; false -> term_to_binary(Key) end,
     BinValue = case is_binary(Value) of true -> Value; false -> term_to_binary(Value) end,
@@ -251,17 +251,17 @@ with_txn(Env, Fun) ->
 %% @doc Execute a function within a transaction with specified flags
 -spec with_txn(lmdb_env(), fun((lmdb_txn()) -> Result), non_neg_integer()) -> {ok, Result} | {error, term()}.
 with_txn(Env, Fun, Flags) ->
-    case lmdb_rs:txn_begin(Env, undefined, Flags) of
+    case lmdb_nif:txn_begin(Env, undefined, Flags) of
         {ok, Txn} ->
             try
                 Result = Fun(Txn),
-                case lmdb_rs:txn_commit(Txn) of
+                case lmdb_nif:txn_commit(Txn) of
                     ok -> {ok, Result};
                     Error -> Error
                 end
             catch
                 _:Reason ->
-                    lmdb_rs:txn_abort(Txn),
+                    lmdb_nif:txn_abort(Txn),
                     {error, Reason}
             end;
         Error ->
@@ -315,12 +315,12 @@ fold(Env, Name, Fun, Acc0) ->
       end
     ),
     with_ro_txn(Env, fun(Txn) ->
-        case lmdb_rs:cursor_open(Txn, Dbi) of
+        case lmdb_nif:cursor_open(Txn, Dbi) of
             {ok, Cursor} ->
                 try
                     fold_cursor(Cursor, Fun, Acc0, first)
                 after
-                    lmdb_rs:cursor_close(Cursor)
+                    lmdb_nif:cursor_close(Cursor)
                 end;
             Error ->
                 throw(Error)
@@ -348,7 +348,7 @@ exists(Txn, Dbi, Key) ->
 -spec count(lmdb_env(), lmdb_dbi()) -> {ok, non_neg_integer()} | {error, term()}.
 count(Env, Dbi) ->
     with_ro_txn(Env, fun(Txn) ->
-        case lmdb_rs:dbi_stat(Txn, Dbi) of
+        case lmdb_nif:dbi_stat(Txn, Dbi) of
             {ok, Stats} ->
                 proplists:get_value(entries, Stats, 0);
             Error ->
@@ -360,7 +360,7 @@ count(Env, Dbi) ->
 
 %% @private
 fold_cursor(Cursor, Fun, Acc, Op) ->
-    case lmdb_rs:cursor_get(Cursor, <<>>, cursor_op_to_int(Op)) of
+    case lmdb_nif:cursor_get(Cursor, <<>>, cursor_op_to_int(Op)) of
         {ok, Key, Value} ->
             NewAcc = Fun(Key, Value, Acc),
             fold_cursor(Cursor, Fun, NewAcc, next);

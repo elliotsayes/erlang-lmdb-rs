@@ -619,4 +619,4 @@ fn make_ok_tuple<'b, T: rustler::Encoder + 'b>(env: Env<'b>, value: T) -> Term<'
     (ok(), value).encode(env)
 }
 
-rustler::init!("lmdb_rs", load = load);
+rustler::init!("lmdb_nif", load = load);

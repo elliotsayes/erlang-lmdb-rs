@@ -1,4 +1,4 @@
-# NIF for lmdb_rs
+# NIF for lmdb_nif
 
 ## To compile the NIF in Erlang:
 
@@ -7,7 +7,7 @@ Add the following lines to your `rebar.config` file:
 {plugins, [rebar3_rustler]}.
 
 {cargo_opts, [
-    {src_dir, "native/lmdb_rs"}
+    {src_dir, "native/lmdb_nif"}
 ]}.
 
 {provider_hooks, [

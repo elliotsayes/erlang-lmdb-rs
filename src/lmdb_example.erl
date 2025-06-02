@@ -224,7 +224,7 @@ performance_test(WriteOps, ReadOps, DBSize) ->
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_mapsize(Env, DBSize),
     ok = lmdb:env_open(Env, "test/perf_test_db", [create, nosubdir, nosync, nolock]),
-    {ok, Txn} = lmdb_rs:txn_begin(Env, undefined, 0),
+    {ok, Txn} = lmdb_nif:txn_begin(Env, undefined, 0),
     {ok, Dbi} = lmdb:open_db(Txn, default),
     % Write `WriteOps' records to the new database.
     RandomData = base64:encode(crypto:strong_rand_bytes(32)),
@@ -234,7 +234,7 @@ performance_test(WriteOps, ReadOps, DBSize) ->
                 lists:foreach(
                     fun(N) ->
                         ok =
-                            lmdb_rs:put(
+                            lmdb_nif:put(
                                 Txn,
                                 Dbi,
                                 <<"key", N:256/integer>>,
@@ -244,7 +244,7 @@ performance_test(WriteOps, ReadOps, DBSize) ->
                     end,
                     lists:seq(1, WriteOps)
                 ),
-            ok = lmdb_rs:txn_commit(Txn)
+            ok = lmdb_nif:txn_commit(Txn)
         end),
     % Calculate write rate.
     WriteRate = erlang:round(WriteOps / (WriteTime / 1000000)),
@@ -278,7 +278,7 @@ performance_test(WriteOps, ReadOps, DBSize) ->
             Env,
             fun(Txn) ->
                 {ok, Dbi} = lmdb:open_db(Txn, default),
-                lmdb_rs:dbi_stat(Txn, Dbi)
+                lmdb_nif:dbi_stat(Txn, Dbi)
             end
         ),
     io:format("    Database statistics: ~p~n", [Stats]),

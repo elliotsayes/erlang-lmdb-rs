@@ -1,6 +1,6 @@
 %% @doc LMDB Erlang NIF Wrapper
 %% Provides Erlang bindings for Lightning Memory-Mapped Database
--module(lmdb_rs).
+-module(lmdb_nif).
 
 -export([
     % Environment operations
@@ -47,12 +47,12 @@ init() ->
         {error, bad_name} ->
             case filelib:is_dir(filename:join(["..", priv])) of
                 true ->
-                    filename:join(["..", priv, "crates", lmdb_rs, lmdb_rs]);
+                    filename:join(["..", priv, "crates", lmdb_nif, lmdb_nif]);
                 _ ->
-                    filename:join([priv, "crates", lmdb_rs, lmdb_rs])
+                    filename:join([priv, "crates", lmdb_nif, lmdb_nif])
             end;
         Dir ->
-            filename:join([Dir, "crates", lmdb_rs, lmdb_rs])
+            filename:join([Dir, "crates", lmdb_nif, lmdb_nif])
     end,
     erlang:load_nif(SoName, 0).
 
