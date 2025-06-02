@@ -1,9 +1,14 @@
-use std::{ffi::{CStr, CString}, os::raw::c_int, ptr, cell::Cell, collections::HashMap, sync::Mutex};
+use std::{
+    cell::Cell,
+    ffi::{CStr, CString},
+    os::raw::c_int,
+    ptr,
+};
 
-use libc::{c_uint, c_void, size_t, c_char};
+use libc::{c_uint, c_void, size_t};
 use liblmdb as lmdb;
 
-use rustler::{self, types::binary::Binary, Atom, Env, Encoder, OwnedBinary, ResourceArc, Term};
+use rustler::{self, types::binary::Binary, Encoder, Env, OwnedBinary, ResourceArc, Term};
 
 rustler::atoms! {
     ok,
@@ -82,18 +87,30 @@ fn env_create<'a>(env: Env<'a>) -> Term<'a> {
     if rc != 0 {
         return rc_to_term(env, rc);
     }
-    let res = ResourceArc::new(EnvResource { env: Cell::new(env_ptr) });
+    let res = ResourceArc::new(EnvResource {
+        env: Cell::new(env_ptr),
+    });
     make_ok_tuple(env, res)
 }
 
 #[rustler::nif]
-fn env_open<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, path_term: Term<'a>, flags: u32) -> Term<'a> {
+fn env_open<'a>(
+    env: Env<'a>,
+    env_res: ResourceArc<EnvResource>,
+    path_term: Term<'a>,
+    flags: u32,
+) -> Term<'a> {
     let path_cstr = match term_to_cstring(path_term) {
         Some(p) => p,
         None => return rustler::types::atom::error().encode(env),
     };
     let rc = unsafe {
-        lmdb::mdb_env_open(env_res.env.get(), path_cstr.as_ptr(), flags as c_uint, 0o664)
+        lmdb::mdb_env_open(
+            env_res.env.get(),
+            path_cstr.as_ptr(),
+            flags as c_uint,
+            0o664,
+        )
     };
     rc_to_term(env, rc)
 }
@@ -111,7 +128,11 @@ fn env_close<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
 }
 
 #[rustler::nif(name = "env_set_maxreaders")]
-fn env_set_maxreaders<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, readers: u32) -> Term<'a> {
+fn env_set_maxreaders<'a>(
+    env: Env<'a>,
+    env_res: ResourceArc<EnvResource>,
+    readers: u32,
+) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_env_set_maxreaders(env_res.env.get(), readers as c_uint) };
     rc_to_term(env, rc)
 }
@@ -177,7 +198,12 @@ fn env_info<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
 }
 
 #[rustler::nif(name = "txn_begin")]
-fn txn_begin<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, parent: Term<'a>, flags: u32) -> Term<'a> {
+fn txn_begin<'a>(
+    env: Env<'a>,
+    env_res: ResourceArc<EnvResource>,
+    parent: Term<'a>,
+    flags: u32,
+) -> Term<'a> {
     let mut parent_txn_ptr: *mut lmdb::MDB_txn = ptr::null_mut();
     if !parent.is_atom() {
         if let Ok(res_arc) = parent.decode::<ResourceArc<TxnResource>>() {
@@ -185,11 +211,20 @@ fn txn_begin<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, parent: Term<'
         }
     }
     let mut txn_ptr: *mut lmdb::MDB_txn = ptr::null_mut();
-    let rc = unsafe { lmdb::mdb_txn_begin(env_res.env.get(), parent_txn_ptr, flags as c_uint, &mut txn_ptr) };
+    let rc = unsafe {
+        lmdb::mdb_txn_begin(
+            env_res.env.get(),
+            parent_txn_ptr,
+            flags as c_uint,
+            &mut txn_ptr,
+        )
+    };
     if rc != 0 {
         return rc_to_term(env, rc);
     }
-    let res = ResourceArc::new(TxnResource { txn: Cell::new(txn_ptr) });
+    let res = ResourceArc::new(TxnResource {
+        txn: Cell::new(txn_ptr),
+    });
     make_ok_tuple(env, res)
 }
 
@@ -217,7 +252,12 @@ fn txn_abort<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
 }
 
 #[rustler::nif(name = "dbi_open")]
-fn dbi_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, name_term: Term<'a>, flags: u32) -> Term<'a> {
+fn dbi_open<'a>(
+    env: Env<'a>,
+    txn_res: ResourceArc<TxnResource>,
+    name_term: Term<'a>,
+    flags: u32,
+) -> Term<'a> {
     let key_bytes_opt = term_to_key_bytes(name_term);
     let mut name_ptr: *const libc::c_char;
     let c_name;
@@ -272,19 +312,28 @@ fn dbi_stat<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Te
 }
 
 #[rustler::nif(name = "get")]
-fn get<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: Binary<'a>) -> Term<'a> {
+fn get<'a>(
+    env: Env<'a>,
+    txn_res: ResourceArc<TxnResource>,
+    dbi: u32,
+    key_bin: Binary<'a>,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
     };
-    let mut data = lmdb::MDB_val { mv_size: 0, mv_data: ptr::null_mut() };
+    let mut data = lmdb::MDB_val {
+        mv_size: 0,
+        mv_data: ptr::null_mut(),
+    };
     let rc = unsafe { lmdb::mdb_get(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut key, &mut data) };
     if rc == lmdb::MDB_NOTFOUND {
         return not_found().encode(env);
     } else if rc != 0 {
         return rc_to_term(env, rc);
     }
-    let slice = unsafe { std::slice::from_raw_parts(data.mv_data as *const u8, data.mv_size as usize) };
+    let slice =
+        unsafe { std::slice::from_raw_parts(data.mv_data as *const u8, data.mv_size as usize) };
     let mut owned = OwnedBinary::new(slice.len()).unwrap();
     owned.as_mut_slice().copy_from_slice(slice);
     let bin_term = owned.release(env);
@@ -292,7 +341,14 @@ fn get<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: B
 }
 
 #[rustler::nif(name = "put")]
-fn put<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: Binary<'a>, data_bin: Binary<'a>, flags: u32) -> Term<'a> {
+fn put<'a>(
+    env: Env<'a>,
+    txn_res: ResourceArc<TxnResource>,
+    dbi: u32,
+    key_bin: Binary<'a>,
+    data_bin: Binary<'a>,
+    flags: u32,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -301,17 +357,37 @@ fn put<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: B
         mv_size: data_bin.len() as size_t,
         mv_data: data_bin.as_ptr() as *mut c_void,
     };
-    let rc = unsafe { lmdb::mdb_put(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut key, &mut data, flags as c_uint) };
+    let rc = unsafe {
+        lmdb::mdb_put(
+            txn_res.txn.get(),
+            dbi as lmdb::MDB_dbi,
+            &mut key,
+            &mut data,
+            flags as c_uint,
+        )
+    };
     rc_to_term(env, rc)
 }
 
 #[rustler::nif(name = "del")]
-fn del_3<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: Binary<'a>) -> Term<'a> {
+fn del_3<'a>(
+    env: Env<'a>,
+    txn_res: ResourceArc<TxnResource>,
+    dbi: u32,
+    key_bin: Binary<'a>,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
     };
-    let rc = unsafe { lmdb::mdb_del(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut key, ptr::null_mut()) };
+    let rc = unsafe {
+        lmdb::mdb_del(
+            txn_res.txn.get(),
+            dbi as lmdb::MDB_dbi,
+            &mut key,
+            ptr::null_mut(),
+        )
+    };
     if rc == lmdb::MDB_NOTFOUND {
         return not_found().encode(env);
     }
@@ -319,7 +395,13 @@ fn del_3<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin:
 }
 
 #[rustler::nif(name = "del")]
-fn del_4<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin: Binary<'a>, data_bin: Binary<'a>) -> Term<'a> {
+fn del_4<'a>(
+    env: Env<'a>,
+    txn_res: ResourceArc<TxnResource>,
+    dbi: u32,
+    key_bin: Binary<'a>,
+    data_bin: Binary<'a>,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -338,11 +420,14 @@ fn del_4<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32, key_bin:
 #[rustler::nif(name = "cursor_open")]
 fn cursor_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Term<'a> {
     let mut cursor_ptr: *mut lmdb::MDB_cursor = ptr::null_mut();
-    let rc = unsafe { lmdb::mdb_cursor_open(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut cursor_ptr) };
+    let rc =
+        unsafe { lmdb::mdb_cursor_open(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut cursor_ptr) };
     if rc != 0 {
         return rc_to_term(env, rc);
     }
-    let res = ResourceArc::new(CursorResource { cursor: Cell::new(cursor_ptr) });
+    let res = ResourceArc::new(CursorResource {
+        cursor: Cell::new(cursor_ptr),
+    });
     make_ok_tuple(env, res)
 }
 
@@ -357,21 +442,38 @@ fn cursor_close<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>) -> Term<
 }
 
 #[rustler::nif(name = "cursor_get")]
-fn cursor_get<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, key_bin: Binary<'a>, op: u32) -> Term<'a> {
+fn cursor_get<'a>(
+    env: Env<'a>,
+    cur_res: ResourceArc<CursorResource>,
+    key_bin: Binary<'a>,
+    op: u32,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
     };
-    let mut data = lmdb::MDB_val { mv_size: 0, mv_data: ptr::null_mut() };
-    let rc = unsafe { lmdb::mdb_cursor_get(cur_res.cursor.get(), &mut key, &mut data, op as lmdb::MDB_cursor_op) };
+    let mut data = lmdb::MDB_val {
+        mv_size: 0,
+        mv_data: ptr::null_mut(),
+    };
+    let rc = unsafe {
+        lmdb::mdb_cursor_get(
+            cur_res.cursor.get(),
+            &mut key,
+            &mut data,
+            op as lmdb::MDB_cursor_op,
+        )
+    };
     if rc == lmdb::MDB_NOTFOUND {
         return not_found().encode(env);
     } else if rc != 0 {
         return rc_to_term(env, rc);
     }
     // Copy key and data into binaries
-    let key_slice = unsafe { std::slice::from_raw_parts(key.mv_data as *const u8, key.mv_size as usize) };
-    let data_slice = unsafe { std::slice::from_raw_parts(data.mv_data as *const u8, data.mv_size as usize) };
+    let key_slice =
+        unsafe { std::slice::from_raw_parts(key.mv_data as *const u8, key.mv_size as usize) };
+    let data_slice =
+        unsafe { std::slice::from_raw_parts(data.mv_data as *const u8, data.mv_size as usize) };
     let mut key_owned = OwnedBinary::new(key_slice.len()).unwrap();
     key_owned.as_mut_slice().copy_from_slice(key_slice);
     let key_term = key_owned.release(env);
@@ -384,7 +486,13 @@ fn cursor_get<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, key_bin: B
 }
 
 #[rustler::nif(name = "cursor_put")]
-fn cursor_put<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, key_bin: Binary<'a>, data_bin: Binary<'a>, flags: u32) -> Term<'a> {
+fn cursor_put<'a>(
+    env: Env<'a>,
+    cur_res: ResourceArc<CursorResource>,
+    key_bin: Binary<'a>,
+    data_bin: Binary<'a>,
+    flags: u32,
+) -> Term<'a> {
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -393,7 +501,8 @@ fn cursor_put<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, key_bin: B
         mv_size: data_bin.len() as size_t,
         mv_data: data_bin.as_ptr() as *mut c_void,
     };
-    let rc = unsafe { lmdb::mdb_cursor_put(cur_res.cursor.get(), &mut key, &mut data, flags as c_uint) };
+    let rc =
+        unsafe { lmdb::mdb_cursor_put(cur_res.cursor.get(), &mut key, &mut data, flags as c_uint) };
     rc_to_term(env, rc)
 }
 
@@ -434,10 +543,18 @@ fn term_to_cstring<'a>(term: Term<'a>) -> Option<CString> {
 }
 
 fn term_to_key_bytes<'a>(term: Term<'a>) -> Option<Vec<u8>> {
-    if term.is_atom() { return None; }
-    if let Ok(bin) = term.decode::<Binary>() { return Some(bin.as_slice().to_vec()); }
-    if let Ok(vec) = term.decode::<Vec<u8>>() { return Some(vec); }
-    if let Ok(string) = term.decode::<String>() { return Some(string.into_bytes()); }
+    if term.is_atom() {
+        return None;
+    }
+    if let Ok(bin) = term.decode::<Binary>() {
+        return Some(bin.as_slice().to_vec());
+    }
+    if let Ok(vec) = term.decode::<Vec<u8>>() {
+        return Some(vec);
+    }
+    if let Ok(string) = term.decode::<String>() {
+        return Some(string.into_bytes());
+    }
     None
 }
 
@@ -445,7 +562,4 @@ fn make_ok_tuple<'b, T: rustler::Encoder + 'b>(env: Env<'b>, value: T) -> Term<'
     (ok(), value).encode(env)
 }
 
-rustler::init!(
-    "lmdb_rs",
-    load = load
-);
+rustler::init!("lmdb_rs", load = load);
