@@ -82,7 +82,7 @@ fn env_create<'a>(env: Env<'a>) -> Term<'a> {
     if rc != 0 {
         return rc_to_term(env, rc);
     }
-    let res = ResourceArc::new(EnvResource { env: Cell::new(env_ptr), dbi_cache: Mutex::new(HashMap::new()) });
+    let res = ResourceArc::new(EnvResource { env: Cell::new(env_ptr) });
     make_ok_tuple(env, res)
 }
 
