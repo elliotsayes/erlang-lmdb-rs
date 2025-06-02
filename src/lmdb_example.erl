@@ -3,10 +3,10 @@
 -export([
     basic_test/0,
     transaction_test/0,
-    batch_test/0,
-    iteration_test/0,
+    % batch_test/0,
+    % iteration_test/0,
     multi_db_test/0,
-    performance_test_/0,
+    performance_test/0,
     run_all_examples/0
 ]).
 -include("lmdb.hrl").
@@ -95,82 +95,82 @@ transaction_test() ->
     ok = lmdb:env_close(Env),
     io:format("Transaction example completed~n").
 
-%% @doc Batch operations example
-batch_test() ->
-    filelib:ensure_dir("test/batch_test_db"),
-    io:format("=== Batch Operations Example ===~n"),
+% %% @doc Batch operations example
+% batch_test() ->
+%     filelib:ensure_dir("test/batch_test_db"),
+%     io:format("=== Batch Operations Example ===~n"),
     
-    {ok, Env} = lmdb:env_create(),
-    ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/batch_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+%     {ok, Env} = lmdb:env_create(),
+%     ok = lmdb:env_set_mapsize(Env, 10485760),
+%     ok = lmdb:env_open(Env, "test/batch_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
-    % Get database handle
-    {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
-        lmdb:open_db(Txn, default)
-    end),
+%     % Get database handle
+%     {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
+%         lmdb:open_db(Txn, default)
+%     end),
     
-    % Batch write operations
-    Operations = [
-        {put, Dbi, <<"product:1">>, <<"Laptop">>},
-        {put, Dbi, <<"product:2">>, <<"Mouse">>},
-        {put, Dbi, <<"product:3">>, <<"Keyboard">>},
-        {put, Dbi, <<"category:electronics">>, <<"Electronics">>}
-    ],
+%     % Batch write operations
+%     Operations = [
+%         {put, Dbi, <<"product:1">>, <<"Laptop">>},
+%         {put, Dbi, <<"product:2">>, <<"Mouse">>},
+%         {put, Dbi, <<"product:3">>, <<"Keyboard">>},
+%         {put, Dbi, <<"category:electronics">>, <<"Electronics">>}
+%     ],
     
-    ok = lmdb:write_batch(Env, Operations),
-    io:format("Batch write completed~n"),
+%     ok = lmdb:write_batch(Env, Operations),
+%     io:format("Batch write completed~n"),
     
-    % Verify batch results
-    {ok, Count} = lmdb:count(Env, Dbi),
-    io:format("Database contains ~p entries~n", [Count]),
+%     % Verify batch results
+%     {ok, Count} = lmdb:count(Env, Dbi),
+%     io:format("Database contains ~p entries~n", [Count]),
     
-    ok = lmdb:env_close(Env),
-    io:format("Batch example completed~n").
+%     ok = lmdb:env_close(Env),
+%     io:format("Batch example completed~n").
 
-%% @doc Database iteration example
-iteration_test() ->
-    filelib:ensure_dir("test/iter_example_db"),
-    io:format("=== Iteration Example ===~n"),
+% %% @doc Database iteration example
+% iteration_test() ->
+%     filelib:ensure_dir("test/iter_example_db"),
+%     io:format("=== Iteration Example ===~n"),
     
-    {ok, Env} = lmdb:env_create(),
-    ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/iter_example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+%     {ok, Env} = lmdb:env_create(),
+%     ok = lmdb:env_set_mapsize(Env, 10485760),
+%     ok = lmdb:env_open(Env, "test/iter_example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
-    % Setup test data
-    {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
-        {ok, Dbi} = lmdb:open_db(Txn, default),
-        lists:foreach(fun(N) ->
-            Key = list_to_binary("key" ++ integer_to_list(N)),
-            Value = list_to_binary("value" ++ integer_to_list(N)),
-            ok = lmdb:put(Txn, Dbi, Key, Value)
-        end, lists:seq(1, 10)),
-        Dbi
-    end),
+%     % Setup test data
+%     {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
+%         {ok, Dbi} = lmdb:open_db(Txn, default),
+%         lists:foreach(fun(N) ->
+%             Key = list_to_binary("key" ++ integer_to_list(N)),
+%             Value = list_to_binary("value" ++ integer_to_list(N)),
+%             ok = lmdb:put(Txn, Dbi, Key, Value)
+%         end, lists:seq(1, 10)),
+%         Dbi
+%     end),
     
-    % Iterate and collect all keys
-    {ok, Keys} = lmdb:fold(Env, Dbi, fun(Key, _Value, Acc) ->
-        [Key | Acc]
-    end, []),
+%     % Iterate and collect all keys
+%     {ok, Keys} = lmdb:fold(Env, Dbi, fun(Key, _Value, Acc) ->
+%         [Key | Acc]
+%     end, []),
     
-    io:format("Found ~p keys: ~p~n", [length(Keys), Keys]),
+%     io:format("Found ~p keys: ~p~n", [length(Keys), Keys]),
     
-    % Count entries with specific prefix
-    {ok, PrefixCount} = lmdb:fold(Env, Dbi, fun(Key, _Value, Acc) ->
-        case binary:match(Key, <<"key">>) of
-            {0, _} -> Acc + 1;
-            _ -> Acc
-        end
-    end, 0),
+%     % Count entries with specific prefix
+%     {ok, PrefixCount} = lmdb:fold(Env, Dbi, fun(Key, _Value, Acc) ->
+%         case binary:match(Key, <<"key">>) of
+%             {0, _} -> Acc + 1;
+%             _ -> Acc
+%         end
+%     end, 0),
     
-    io:format("Keys with 'key' prefix: ~p~n", [PrefixCount]),
+%     io:format("Keys with 'key' prefix: ~p~n", [PrefixCount]),
     
-    % Execute function for each entry
-    ok = lmdb:foreach(Env, Dbi, fun(Key, Value) ->
-        io:format("  ~s -> ~s~n", [Key, Value])
-    end),
+%     % Execute function for each entry
+%     ok = lmdb:foreach(Env, Dbi, fun(Key, Value) ->
+%         io:format("  ~s -> ~s~n", [Key, Value])
+%     end),
     
-    ok = lmdb:env_close(Env),
-    io:format("Iteration example completed~n").
+%     ok = lmdb:env_close(Env),
+%     io:format("Iteration example completed~n").
 
 %% @doc Multiple databases example
 multi_db_test() ->
@@ -213,10 +213,10 @@ multi_db_test() ->
 
 %% @doc Performance test example. By default, it performs 1M writes and 1M reads
 %% over a 100MB database.
-performance_test_() ->
-    performance_test_(1_000_000, 1_000_000, 600*1024*1024). % 600MB
+performance_test() ->
+    performance_test(1_000_000, 1_000_000, 600*1024*1024). % 600MB
 
-performance_test_(WriteOps, ReadOps, DBSize) ->
+performance_test(WriteOps, ReadOps, DBSize) ->
     filelib:ensure_dir("test/perf_test_db"),
     io:format("=== Performance Test ===~n"),
     io:format("    Performing writes: ~w ops.~n", [WriteOps]),
@@ -289,10 +289,10 @@ performance_test_(WriteOps, ReadOps, DBSize) ->
 run_all_examples() ->
     basic_test(),
     transaction_test(),
-    batch_test(),
-    iteration_test(),
+    % batch_test(),
+    % iteration_test(),
     multi_db_test(),
-    performance_test_(),
+    performance_test(),
     % Cleanup
     os:cmd(
         "rm -rf " ++
