@@ -20,6 +20,11 @@ rustler::atoms! {
     leaf_pages,
     overflow_pages,
     entries,
+    environment_closed,
+    transaction_inactive,
+    cursor_closed,
+    parent_transaction_inactive,
+    invalid_parent_transaction,
 }
 
 #[derive(Debug)]
@@ -100,6 +105,9 @@ fn env_open<'a>(
     path_term: Term<'a>,
     flags: u32,
 ) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let path_cstr = match term_to_cstring(path_term) {
         Some(p) => p,
         None => return rustler::types::atom::error().encode(env),
@@ -133,30 +141,45 @@ fn env_set_maxreaders<'a>(
     env_res: ResourceArc<EnvResource>,
     readers: u32,
 ) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_env_set_maxreaders(env_res.env.get(), readers as c_uint) };
     rc_to_term(env, rc)
 }
 
 #[rustler::nif]
 fn env_set_maxdbs<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, dbs: u32) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_env_set_maxdbs(env_res.env.get(), dbs as c_uint) };
     rc_to_term(env, rc)
 }
 
 #[rustler::nif]
 fn env_set_mapsize<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, size: u64) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_env_set_mapsize(env_res.env.get(), size as size_t) };
     rc_to_term(env, rc)
 }
 
 #[rustler::nif]
 fn env_sync<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, force: i32) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_env_sync(env_res.env.get(), force) };
     rc_to_term(env, rc)
 }
 
 #[rustler::nif]
 fn env_stat<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     unsafe {
         let mut stat = std::mem::MaybeUninit::<lmdb::MDB_stat>::uninit();
         let rc = lmdb::mdb_env_stat(env_res.env.get(), stat.as_mut_ptr());
@@ -178,6 +201,9 @@ fn env_stat<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
 
 #[rustler::nif]
 fn env_info<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     unsafe {
         let mut info = std::mem::MaybeUninit::<lmdb::MDB_envinfo>::uninit();
         let rc = lmdb::mdb_env_info(env_res.env.get(), info.as_mut_ptr());
@@ -204,10 +230,21 @@ fn txn_begin<'a>(
     parent: Term<'a>,
     flags: u32,
 ) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     let mut parent_txn_ptr: *mut lmdb::MDB_txn = ptr::null_mut();
     if !parent.is_atom() {
-        if let Ok(res_arc) = parent.decode::<ResourceArc<TxnResource>>() {
-            parent_txn_ptr = res_arc.txn.get();
+        match parent.decode::<ResourceArc<TxnResource>>() {
+            Ok(res_arc) => {
+                parent_txn_ptr = res_arc.txn.get();
+                if parent_txn_ptr.is_null() {
+                    return (error(), parent_transaction_inactive()).encode(env);
+                }
+            }
+            Err(_) => {
+                return (error(), invalid_parent_transaction()).encode(env);
+            }
         }
     }
     let mut txn_ptr: *mut lmdb::MDB_txn = ptr::null_mut();
@@ -230,6 +267,9 @@ fn txn_begin<'a>(
 
 #[rustler::nif]
 fn txn_commit<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_txn_commit(txn_res.txn.get()) };
     // After commit, txn handle is invalid; set pointer to null
     let mut_ref = ResourceArc::clone(&txn_res);
@@ -256,6 +296,9 @@ fn dbi_open<'a>(
     name_term: Term<'a>,
     flags: u32,
 ) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let name_ptr: *const libc::c_char;
     let c_name;
     if name_term.is_atom() {
@@ -283,12 +326,18 @@ fn dbi_open<'a>(
 
 #[rustler::nif]
 fn dbi_close<'a>(env: Env<'a>, env_res: ResourceArc<EnvResource>, dbi: u32) -> Term<'a> {
+    if env_res.env.get().is_null() {
+        return (error(), environment_closed()).encode(env);
+    }
     unsafe { lmdb::mdb_dbi_close(env_res.env.get(), dbi as lmdb::MDB_dbi) };
     ok().encode(env)
 }
 
 #[rustler::nif]
 fn dbi_stat<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     unsafe {
         let mut stat = std::mem::MaybeUninit::<lmdb::MDB_stat>::uninit();
         let rc = lmdb::mdb_stat(txn_res.txn.get(), dbi as lmdb::MDB_dbi, stat.as_mut_ptr());
@@ -315,6 +364,9 @@ fn get<'a>(
     dbi: u32,
     key_bin: Binary<'a>,
 ) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -346,6 +398,9 @@ fn put<'a>(
     data_bin: Binary<'a>,
     flags: u32,
 ) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -373,6 +428,9 @@ fn del_3<'a>(
     dbi: u32,
     key_bin: Binary<'a>,
 ) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -399,6 +457,9 @@ fn del_4<'a>(
     key_bin: Binary<'a>,
     data_bin: Binary<'a>,
 ) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -416,6 +477,9 @@ fn del_4<'a>(
 
 #[rustler::nif]
 fn cursor_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) -> Term<'a> {
+    if txn_res.txn.get().is_null() {
+        return (error(), transaction_inactive()).encode(env);
+    }
     let mut cursor_ptr: *mut lmdb::MDB_cursor = ptr::null_mut();
     let rc =
         unsafe { lmdb::mdb_cursor_open(txn_res.txn.get(), dbi as lmdb::MDB_dbi, &mut cursor_ptr) };
@@ -430,6 +494,9 @@ fn cursor_open<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>, dbi: u32) ->
 
 #[rustler::nif]
 fn cursor_close<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>) -> Term<'a> {
+    if cur_res.cursor.get().is_null() {
+        return (error(), cursor_closed()).encode(env);
+    }
     unsafe {
         lmdb::mdb_cursor_close(cur_res.cursor.get());
         let mut_ref = ResourceArc::clone(&cur_res);
@@ -445,6 +512,9 @@ fn cursor_get<'a>(
     key_bin: Binary<'a>,
     op: u32,
 ) -> Term<'a> {
+    if cur_res.cursor.get().is_null() {
+        return (error(), cursor_closed()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -490,6 +560,9 @@ fn cursor_put<'a>(
     data_bin: Binary<'a>,
     flags: u32,
 ) -> Term<'a> {
+    if cur_res.cursor.get().is_null() {
+        return (error(), cursor_closed()).encode(env);
+    }
     let mut key = lmdb::MDB_val {
         mv_size: key_bin.len() as size_t,
         mv_data: key_bin.as_ptr() as *mut c_void,
@@ -505,6 +578,9 @@ fn cursor_put<'a>(
 
 #[rustler::nif]
 fn cursor_del<'a>(env: Env<'a>, cur_res: ResourceArc<CursorResource>, flags: u32) -> Term<'a> {
+    if cur_res.cursor.get().is_null() {
+        return (error(), cursor_closed()).encode(env);
+    }
     let rc = unsafe { lmdb::mdb_cursor_del(cur_res.cursor.get(), flags as c_uint) };
     rc_to_term(env, rc)
 }
