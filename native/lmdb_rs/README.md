@@ -1,7 +1,9 @@
-{erl_opts, [debug_info]}.
+# NIF for lmdb_rs
 
-{deps, []}.
+## To compile the NIF in Erlang:
 
+Add the following lines to your `rebar.config` file:
+```erlang
 {plugins, [rebar3_rustler]}.
 
 {cargo_opts, [
@@ -17,3 +19,14 @@
         {eunit, {cargo, test}}
     ]}
 ]}.
+```
+
+Build
+-----
+
+    $ cargo build
+
+Test
+-----
+
+    $ cargo test

@@ -1,0 +1,3 @@
+[toolchain]
+# rebar3_cargo uses some unstable (-Z) options
+channel = "nightly"
