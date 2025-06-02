@@ -1,12 +1,12 @@
 %%% @doc Example usage of LMDB NIF
 -module(lmdb_example).
 -export([
-    basic_example/0,
-    transaction_example/0,
-    batch_example/0,
-    iteration_example/0,
-    multi_db_example/0,
-    performance_test/0,
+    basic_test/0,
+    transaction_test/0,
+    batch_test/0,
+    iteration_test/0,
+    multi_db_test/0,
+    performance_test_/0,
     run_all_examples/0
 ]).
 -include("lmdb.hrl").
@@ -21,7 +21,7 @@
 ]).
 
 %% @doc Basic key-value operations
-basic_example() ->
+basic_test() ->
     filelib:ensure_dir("test/example_db"),
     io:format("=== Basic LMDB Example ===~n"),
     
@@ -57,7 +57,7 @@ basic_example() ->
     Value.
 
 %% @doc Transaction rollback example
-transaction_example() ->
+transaction_test() ->
     filelib:ensure_dir("test/tx_example_db"),
     io:format("=== Transaction Example ===~n"),
     
@@ -96,13 +96,13 @@ transaction_example() ->
     io:format("Transaction example completed~n").
 
 %% @doc Batch operations example
-batch_example() ->
-    filelib:ensure_dir("test/batch_example_db"),
+batch_test() ->
+    filelib:ensure_dir("test/batch_test_db"),
     io:format("=== Batch Operations Example ===~n"),
     
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/batch_example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+    ok = lmdb:env_open(Env, "test/batch_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
     % Get database handle
     {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
@@ -128,7 +128,7 @@ batch_example() ->
     io:format("Batch example completed~n").
 
 %% @doc Database iteration example
-iteration_example() ->
+iteration_test() ->
     filelib:ensure_dir("test/iter_example_db"),
     io:format("=== Iteration Example ===~n"),
     
@@ -173,14 +173,14 @@ iteration_example() ->
     io:format("Iteration example completed~n").
 
 %% @doc Multiple databases example
-multi_db_example() ->
-    filelib:ensure_dir("test/multi_db_example"),
+multi_db_test() ->
+    filelib:ensure_dir("test/multi_db_test"),
     io:format("=== Multiple Databases Example ===~n"),
     
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_maxdbs(Env, 5), % Allow multiple databases
     ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/multi_db_example", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+    ok = lmdb:env_open(Env, "test/multi_db_test", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
     {ok, Result} = lmdb:with_txn(Env, fun(Txn) ->
         % Open multiple databases
@@ -213,10 +213,10 @@ multi_db_example() ->
 
 %% @doc Performance test example. By default, it performs 1M writes and 1M reads
 %% over a 100MB database.
-performance_test() ->
-    performance_test(1_000_000, 1_000_000, 600*1024*1024). % 600MB
+performance_test_() ->
+    performance_test_(1_000_000, 1_000_000, 600*1024*1024). % 600MB
 
-performance_test(WriteOps, ReadOps, DBSize) ->
+performance_test_(WriteOps, ReadOps, DBSize) ->
     filelib:ensure_dir("test/perf_test_db"),
     io:format("=== Performance Test ===~n"),
     io:format("    Performing writes: ~w ops.~n", [WriteOps]),
@@ -287,12 +287,12 @@ performance_test(WriteOps, ReadOps, DBSize) ->
 
 %% @doc Run all examples
 run_all_examples() ->
-    basic_example(),
-    transaction_example(),
-    batch_example(),
-    iteration_example(),
-    multi_db_example(),
-    performance_test(),
+    basic_test(),
+    transaction_test(),
+    batch_test(),
+    iteration_test(),
+    multi_db_test(),
+    performance_test_(),
     % Cleanup
     os:cmd(
         "rm -rf " ++
