@@ -1,83 +1,129 @@
+%% @doc LMDB Erlang NIF Wrapper
+%% Provides Erlang bindings for Lightning Memory-Mapped Database
 -module(lmdb_rs).
 
--export([ add/2
-        , my_map/0
-        , my_maps/0
-        , my_tuple/0
-        , unit_enum_echo/1
-        , tagged_enum_echo/1
-        , untagged_enum_echo/1
-        ]).
+-export([
+    % Environment operations
+    env_create/0,
+    env_open/3,
+    env_close/1,
+    env_set_maxreaders/2,
+    env_set_maxdbs/2,
+    env_set_mapsize/2,
+    env_sync/2,
+    env_stat/1,
+    env_info/1,
+    
+    % Transaction operations
+    txn_begin/3,
+    txn_commit/1,
+    txn_abort/1,
+    
+    % Database operations
+    dbi_open/3,
+    dbi_close/2,
+    dbi_stat/2,
+    
+    % Data operations
+    get/3,
+    put/5,
+    del/3,
+    del/4,
+    
+    % Cursor operations
+    cursor_open/2,
+    cursor_close/1,
+    cursor_get/3,
+    cursor_put/4,
+    cursor_del/2
+]).
 
--include("cargo.hrl").
 -on_load(init/0).
--define(NOT_LOADED, not_loaded(?LINE)).
 
-%%%===================================================================
-%%% API
-%%%===================================================================
-
-add(_A, _B) ->
-    ?NOT_LOADED.
-
-my_map() ->
-    ?NOT_LOADED.
-
-my_maps() ->
-    ?NOT_LOADED.
-
-my_tuple() ->
-    ?NOT_LOADED.
-
-unit_enum_echo(_Atom) ->
-    ?NOT_LOADED.
-
-tagged_enum_echo(_Tagged) ->
-    ?NOT_LOADED.
-
-untagged_enum_echo(_Untagged) ->
-    ?NOT_LOADED.
-
-%%%===================================================================
-%%% NIF
-%%%===================================================================
-
+%% @doc Initialize the NIF
 init() ->
-    ?load_nif_from_crate(lmdb_rs, 0).
+    SoName = case code:priv_dir(?MODULE) of
+        {error, bad_name} ->
+            case filelib:is_dir(filename:join(["..", priv])) of
+                true ->
+                    filename:join(["..", priv, lmdb_rs]);
+                _ ->
+                    filename:join([priv, lmdb_rs])
+            end;
+        Dir ->
+            filename:join(Dir, lmdb_rs)
+    end,
+    erlang:load_nif(SoName, 0).
 
-not_loaded(Line) ->
-    erlang:nif_error({not_loaded, [{module, ?MODULE}, {line, Line}]}).
+%% NIF function stubs - will be replaced by actual NIF implementations
+env_create() ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-%%%===================================================================
-%%% Tests
-%%%===================================================================
+env_open(_Env, _Path, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
+env_close(_Env) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-add_test() ->
-    ?assertEqual(4, add(2, 2)).
+env_set_maxreaders(_Env, _Readers) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-my_map_test() ->
-    ?assertEqual(#{lhs => 33, rhs => 21}, my_map()).
+env_set_maxdbs(_Env, _Dbs) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-my_maps_test() ->
-    ?assertEqual([#{lhs => 33, rhs => 21}, #{lhs => 33, rhs => 21}], my_maps()).
+env_set_mapsize(_Env, _Size) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-my_tuple_test() ->
-    ?assertEqual({33, 21}, my_tuple()).
+env_sync(_Env, _Force) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-unit_enum_echo_test() ->
-    ?assertEqual(foo_bar, unit_enum_echo(foo_bar)),
-    ?assertEqual(baz, unit_enum_echo(baz)).
+env_stat(_Env) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-tagged_enum_echo_test() ->
-    ?assertEqual(foo, tagged_enum_echo(foo)),
-    ?assertEqual({bar, <<"string">>}, tagged_enum_echo({bar, <<"string">>})),
-    ?assertEqual({baz,#{a => 1, b => 2}}, tagged_enum_echo({baz,#{a => 1, b => 2}})).
+env_info(_Env) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
-untagged_enum_echo_test() ->
-    ?assertEqual(123, untagged_enum_echo(123)),
-    ?assertEqual(<<"string">>, untagged_enum_echo(<<"string">>)).
+txn_begin(_Env, _Parent, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
 
--endif.
+txn_commit(_Txn) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+txn_abort(_Txn) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+dbi_open(_Txn, _Name, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+dbi_close(_Env, _Dbi) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+dbi_stat(_Txn, _Dbi) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+get(_Txn, _Dbi, _Key) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+put(_Txn, _Dbi, _Key, _Data, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+del(_Txn, _Dbi, _Key) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+del(_Txn, _Dbi, _Key, _Data) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+cursor_open(_Txn, _Dbi) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+cursor_close(_Cursor) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+cursor_get(_Cursor, _Key, _Op) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+cursor_put(_Cursor, _Key, _Data, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).
+
+cursor_del(_Cursor, _Flags) ->
+    erlang:nif_error({nif_not_loaded, ?MODULE}).

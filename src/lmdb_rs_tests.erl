@@ -1,5 +1,5 @@
 %%% @doc Unit tests for LMDB NIF
--module(lmdb_nif_tests).
+-module(lmdb_rs_tests).
 -include_lib("eunit/include/eunit.hrl").
 -include("lmdb.hrl").
 -define(TEST_DB_PATH, "test_lmdb").

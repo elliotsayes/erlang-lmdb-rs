@@ -1,14 +1,30 @@
+%% src/lmdb_rs.app.src
 {application, lmdb_rs,
- [{description, "An OTP library"},
-  {vsn, "0.1.0"},
+ [
+  {description, "Erlang NIF bindings for Lightning Memory-Mapped Database (LMDB)"},
+  {vsn, "1.0.0"},
   {registered, []},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []},
   {modules, []},
-
-  {licenses, ["Apache 2.0"]},
-  {links, []}
+  {licenses, ["MIT"]},
+  {links, [
+    {"GitHub", "https://github.com/yourorg/lmdb_rs"},
+    {"LMDB", "http://www.lmdb.tech/doc/"}
+  ]},
+  {maintainers, ["Your Name"]},
+  {files, [
+    "src",
+    "c_src", 
+    "include",
+    "priv",
+    "rebar.config",
+    "rebar.lock",
+    "README.md",
+    "LICENSE",
+    "Makefile"
+  ]}
  ]}.
