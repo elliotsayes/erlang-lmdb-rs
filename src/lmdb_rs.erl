@@ -38,22 +38,12 @@
     cursor_del/2
 ]).
 
+-include_lib("cargo.hrl").
 -on_load(init/0).
 
 %% @doc Initialize the NIF
 init() ->
-    SoName = case code:priv_dir(?MODULE) of
-        {error, bad_name} ->
-            case filelib:is_dir(filename:join(["..", priv])) of
-                true ->
-                    filename:join(["..", priv, lmdb_rs]);
-                _ ->
-                    filename:join([priv, lmdb_rs])
-            end;
-        Dir ->
-            filename:join(Dir, lmdb_rs)
-    end,
-    erlang:load_nif(SoName, 0).
+    ?load_nif_from_crate(lmdb_rs, 0).
 
 %% NIF function stubs - will be replaced by actual NIF implementations
 env_create() ->

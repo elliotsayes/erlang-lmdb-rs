@@ -18,11 +18,13 @@
   {maintainers, ["Your Name"]},
   {files, [
     "src",
-    "c_src", 
+    "native",
     "include",
     "priv",
     "rebar.config",
     "rebar.lock",
+    "Cargo.toml",
+    "Cargo.lock",
     "README.md",
     "LICENSE",
     "Makefile"
