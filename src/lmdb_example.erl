@@ -12,23 +12,23 @@
 -include("lmdb.hrl").
 
 -define(TEST_FILES, [
-    <<"test/example_db">>,
-    <<"test/tx_example_db">>,
-    <<"test/batch_example_db">>,
-    <<"test/iter_example_db">>,
-    <<"test/multi_db_example">>,
+    <<"test/basic_test_db">>,
+    <<"test/tx_test_db">>,
+    <<"test/batch_test_db">>,
+    <<"test/iter_test_db">>,
+    <<"test/multi_test_db">>,
     <<"test/perf_test_db">>
 ]).
 
 %% @doc Basic key-value operations
 basic_test() ->
-    filelib:ensure_dir("test/example_db"),
+    filelib:ensure_dir("test/basic_test_db"),
     io:format("=== Basic LMDB Example ===~n"),
     
     % Create and configure environment
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_mapsize(Env, 10485760), % 10MB
-    ok = lmdb:env_open(Env, "test/example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+    ok = lmdb:env_open(Env, "test/basic_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
     % Simple put/get operations
     {ok, Value} = lmdb:with_txn(Env, fun(Txn) ->
@@ -58,12 +58,12 @@ basic_test() ->
 
 %% @doc Transaction rollback example
 transaction_test() ->
-    filelib:ensure_dir("test/tx_example_db"),
+    filelib:ensure_dir("test/tx_test_db"),
     io:format("=== Transaction Example ===~n"),
     
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/tx_example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+    ok = lmdb:env_open(Env, "test/tx_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
     % Successful transaction
     {ok, success} = lmdb:with_txn(Env, fun(Txn) ->
@@ -129,12 +129,12 @@ transaction_test() ->
 
 % %% @doc Database iteration example
 % iteration_test() ->
-%     filelib:ensure_dir("test/iter_example_db"),
+%     filelib:ensure_dir("test/iter_test_db"),
 %     io:format("=== Iteration Example ===~n"),
     
 %     {ok, Env} = lmdb:env_create(),
 %     ok = lmdb:env_set_mapsize(Env, 10485760),
-%     ok = lmdb:env_open(Env, "test/iter_example_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+%     ok = lmdb:env_open(Env, "test/iter_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
 %     % Setup test data
 %     {ok, Dbi} = lmdb:with_txn(Env, fun(Txn) ->
@@ -174,13 +174,13 @@ transaction_test() ->
 
 %% @doc Multiple databases example
 multi_db_test() ->
-    filelib:ensure_dir("test/multi_db_test"),
+    filelib:ensure_dir("test/multi_test_db"),
     io:format("=== Multiple Databases Example ===~n"),
     
     {ok, Env} = lmdb:env_create(),
     ok = lmdb:env_set_maxdbs(Env, 5), % Allow multiple databases
     ok = lmdb:env_set_mapsize(Env, 10485760),
-    ok = lmdb:env_open(Env, "test/multi_db_test", ?MDB_CREATE bor ?MDB_NOSUBDIR),
+    ok = lmdb:env_open(Env, "test/multi_test_db", ?MDB_CREATE bor ?MDB_NOSUBDIR),
     
     {ok, Result} = lmdb:with_txn(Env, fun(Txn) ->
         % Open multiple databases
