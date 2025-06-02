@@ -29,10 +29,10 @@ docs:
 
 test:
 	@$(REBAR3) cargo clean
-	@$(REBAR3) eunit
+	@$(REBAR3) as prod eunit
 
 test-all:
-	@$(REBAR3) do eunit, ct, cover
+	@$(REBAR3) as prod do eunit, ct, cover
 
 release: test
 	@$(REBAR3) as prod release

@@ -214,7 +214,8 @@ make test
 
 Or with rebar3:
 ```bash
-rebar3 eunit
+# `as prod` to build rust native code in Release mode, for performance testing
+rebar3 as prod eunit
 ```
 
 ## Building from Source

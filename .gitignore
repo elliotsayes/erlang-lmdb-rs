@@ -21,3 +21,6 @@ target
 # Cargo.lock
 crates.hrl
 priv/crates
+
+test/
+test_*
