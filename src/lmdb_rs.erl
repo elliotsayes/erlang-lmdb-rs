@@ -43,7 +43,18 @@
 
 %% @doc Initialize the NIF
 init() ->
-    ?load_nif_from_crate(lmdb_rs, 0).
+    SoName = case code:priv_dir(?MODULE) of
+        {error, bad_name} ->
+            case filelib:is_dir(filename:join(["..", priv])) of
+                true ->
+                    filename:join(["..", priv, "crates", lmdb_rs, lmdb_rs]);
+                _ ->
+                    filename:join([priv, "crates", lmdb_rs, lmdb_rs])
+            end;
+        Dir ->
+            filename:join([Dir, "crates", lmdb_rs, lmdb_rs])
+    end,
+    erlang:load_nif(SoName, 0).
 
 %% NIF function stubs - will be replaced by actual NIF implementations
 env_create() ->

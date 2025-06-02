@@ -1,6 +1,6 @@
 -cargo_header_version 1.
 -ifndef(CARGO_LOAD_APP).
--define(CARGO_LOAD_APP,hb).
+-define(CARGO_LOAD_APP,lmdb_rs).
 -endif.
 -ifndef(CARGO_HRL).
 -define(CARGO_HRL, 1).
