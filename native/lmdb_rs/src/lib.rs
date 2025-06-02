@@ -232,10 +232,8 @@ fn txn_begin<'a>(
 fn txn_commit<'a>(env: Env<'a>, txn_res: ResourceArc<TxnResource>) -> Term<'a> {
     let rc = unsafe { lmdb::mdb_txn_commit(txn_res.txn.get()) };
     // After commit, txn handle is invalid; set pointer to null
-    unsafe {
-        let mut_ref = ResourceArc::clone(&txn_res);
-        mut_ref.txn.set(ptr::null_mut());
-    }
+    let mut_ref = ResourceArc::clone(&txn_res);
+    mut_ref.txn.set(ptr::null_mut());
     rc_to_term(env, rc)
 }
 
@@ -258,8 +256,7 @@ fn dbi_open<'a>(
     name_term: Term<'a>,
     flags: u32,
 ) -> Term<'a> {
-    let key_bytes_opt = term_to_key_bytes(name_term);
-    let mut name_ptr: *const libc::c_char;
+    let name_ptr: *const libc::c_char;
     let c_name;
     if name_term.is_atom() {
         name_ptr = ptr::null();
@@ -538,22 +535,6 @@ fn term_to_cstring<'a>(term: Term<'a>) -> Option<CString> {
     }
     if let Ok(string) = term.decode::<String>() {
         return CString::new(string).ok();
-    }
-    None
-}
-
-fn term_to_key_bytes<'a>(term: Term<'a>) -> Option<Vec<u8>> {
-    if term.is_atom() {
-        return None;
-    }
-    if let Ok(bin) = term.decode::<Binary>() {
-        return Some(bin.as_slice().to_vec());
-    }
-    if let Ok(vec) = term.decode::<Vec<u8>>() {
-        return Some(vec);
-    }
-    if let Ok(string) = term.decode::<String>() {
-        return Some(string.into_bytes());
     }
     None
 }
